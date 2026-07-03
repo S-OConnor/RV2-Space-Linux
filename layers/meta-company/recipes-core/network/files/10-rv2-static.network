@@ -1,0 +1,22 @@
+# rv2-sgl static management address for the primary wired port.
+#
+# systemd-networkd applies the FIRST (lexical) .network file whose [Match]
+# succeeds, and ignores the rest for that link. The "10-" prefix therefore wins
+# over systemd-conf's shipped "80-wired.network" (which does DHCP on every
+# ether link), so this file -- not DHCP -- configures the primary port.
+#
+# The match is scoped to the first wired interface only. On the OrangePi RV2
+# (SpacemiT K1 EMAC) that comes up as end0 with mainline predictable naming, or
+# eth0 on kernels without it; listing both matches whichever exists. A second
+# NIC, if cabled, keeps falling through to 80-wired.network (DHCP).
+[Match]
+Name=end0 eth0
+
+[Network]
+Address=10.0.2.101/24
+
+# On-subnet management address by design: no default route or DNS is set, so
+# this does not assume a gateway that may not exist on the bench network. To
+# route off-subnet, set these to the real gateway/resolver and rebuild:
+#Gateway=10.0.2.1
+#DNS=10.0.2.1

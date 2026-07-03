@@ -20,6 +20,7 @@ RDEPENDS:${PN} = " \
     python3-modules \
     watchdog \
     watchdog-config \
+    rv2-network \
     zeromq \
     cppzmq \
     hello-rv2 \
@@ -31,6 +32,10 @@ RDEPENDS:${PN} = " \
 #   python3-modules      - the full stdlib metapackage; drop it to save
 #                          significant image size (python3-core alone is much smaller)
 #   watchdog / watchdog-config - from oe-core (userspace watchdog daemon + config)
+#   rv2-network          - from meta-company; pins the primary wired port to the
+#                          static address 10.0.2.101/24 (systemd-networkd),
+#                          overriding systemd-conf's DHCP default. Edit the
+#                          .network file in recipes-core/network to change it.
 #   zeromq               - from meta-oe; ships the runtime libzmq.so in the image.
 #   cppzmq               - from meta-oe; header-only C++ bindings, so its main
 #                          package is empty (ALLOW_EMPTY) and adds ~nothing to the
