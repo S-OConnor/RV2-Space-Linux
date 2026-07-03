@@ -1,0 +1,15 @@
+# kas/rv2-sdk.yml -- cross SDK installer for rv2-sgl-image.
+#
+# Usage:   kas build kas/rv2-sdk.yml     (or: ./scripts/build-sdk.sh)
+#
+# Builds the standard SDK for the RELEASE configuration (the SDK should match
+# what ships). `task: populate_sdk` makes kas run:
+#     bitbake rv2-sgl-image -c populate_sdk
+# The self-extracting installer lands in build/tmp/deploy/sdk/*.sh.
+
+header:
+  version: 14
+  includes:
+    - kas/rv2-release.yml   # path is relative to the repository root
+
+task: populate_sdk

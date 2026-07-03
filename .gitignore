@@ -1,0 +1,30 @@
+# kas-fetched upstream repositories (do not ignore layers/ wholesale:
+# layers/meta-company is part of this repository)
+/layers/bitbake/
+/layers/openembedded-core/
+/layers/meta-poky/
+/layers/meta-openembedded/
+/layers/meta-riscv/
+/layers/meta-sgl/
+
+# Yocto build output
+/build/
+/build-*/
+
+# Relocated download / sstate caches (if DL_DIR / SSTATE_DIR are pointed here)
+/downloads/
+/sstate-cache/
+
+# kas runtime state
+/.config.yaml
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Build the release image (no debug conveniences).
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"   # kas resolves the work dir from CWD: sources land in layers/, build output in build/
+
+# All build tooling runs inside the official kas container image
+# (ghcr.io/siemens/kas/kas) via the vendored scripts/kas-container wrapper --
+# nothing besides Docker or Podman needs to be installed on the host.
+# kas-container prefers docker; export KAS_CONTAINER_ENGINE=podman to force podman.
+# Set KAS_NATIVE=1 to use a host-installed `kas` instead.
+if [[ "${KAS_NATIVE:-0}" == "1" ]]; then
+    if ! command -v kas >/dev/null 2>&1; then
+        echo "error: KAS_NATIVE=1 but 'kas' was not found on the host." >&2
+        exit 1
+    fi
+    KAS_CMD=(kas)
+else
+    if ! command -v docker >/dev/null 2>&1 && ! command -v podman >/dev/null 2>&1; then
+        echo "error: neither docker nor podman found (required by scripts/kas-container)." >&2
+        echo "       Install a container engine, or set KAS_NATIVE=1 to use a host-installed kas." >&2
+        exit 1
+    fi
+    KAS_CMD=("${REPO_ROOT}/scripts/kas-container")
+fi
+
+echo "note: artifacts will land in build/tmp/deploy/images/orangepi-rv2-mainline/"
+exec "${KAS_CMD[@]}" build kas/rv2-release.yml "$@"   # extra args pass through (e.g. --update)

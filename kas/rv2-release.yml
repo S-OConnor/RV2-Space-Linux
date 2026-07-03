@@ -1,0 +1,31 @@
+# kas/rv2-release.yml -- RELEASE build of rv2-sgl-image.
+#
+# Usage:   kas build kas/rv2-release.yml     (or: ./scripts/build-release.sh)
+#
+# No debug conveniences. Hardening measures are listed as commented
+# candidates: enable them deliberately, one at a time, and boot-test.
+
+header:
+  version: 14
+  includes:
+    - kas/include/rv2-base.yml   # path is relative to the repository root
+
+local_conf_header:
+  # Same key ("rv2-variant") as in rv2-dev.yml -- mutually exclusive variants.
+  rv2-variant: |
+    # RELEASE: kas generates local.conf from scratch, so no debug conveniences
+    # can leak in from local.conf.sample; the empty assignment documents intent.
+    EXTRA_IMAGE_FEATURES = ""
+
+    # --- Hardening candidates (SGL security posture placeholders) ----------
+    # Enable deliberately and boot-test each one; see docs/sgl-integration-notes.md.
+    # IMAGE_FEATURES:append:pn-rv2-sgl-image = " read-only-rootfs"
+    # INHERIT += "cve-check"
+    # SGL: security/safety policy fragments from meta-sgl land here once the
+    # upstream layer publishes them (it currently ships configuration only).
+
+    # --- Reproducibility ----------------------------------------------------
+    # Branches float. For a reproducible release either:
+    #   * run `kas lock kas/rv2-release.yml` to generate a lockfile of exact
+    #     commits, or
+    #   * set `commit:` pins for each repo in kas/include/rv2-base.yml.

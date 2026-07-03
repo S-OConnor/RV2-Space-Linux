@@ -1,0 +1,159 @@
+# kas/include/rv2-base.yml
+#
+# Shared foundation for every rv2-* build variant (dev / release / sdk).
+# The variant files include this and only add/override local.conf content.
+#
+# Yocto series: wrynose (6.0) -- the current LTS, supported until April 2030.
+#
+# ---------------------------------------------------------------------------
+# ADJUST HERE on a Yocto series bump:
+#   1. Change the &yocto_series anchor below (used by all Yocto-tracking repos).
+#   2. Change the bitbake branch to the matching release:
+#        wrynose/6.0 -> "2.18", whinlatter/5.3 -> "2.16", walnascar/5.2 -> "2.12"
+#   3. Update LAYERSERIES_COMPAT_meta-company in
+#      layers/meta-company/conf/layer.conf.
+#   4. Re-check the meta-sgl compatibility shim in local_conf_header below.
+# ---------------------------------------------------------------------------
+#
+# NOTE: Yocto 5.3+ no longer publishes the `poky` combo repository (poky's
+# last release branch is walnascar). What used to be "poky" is fetched as
+# three separate repos here: bitbake (the build tool), openembedded-core
+# (layer `meta`) and meta-yocto (layer `meta-poky`, which provides
+# conf/distro/poky.conf that our rv2-sgl distro requires). This mirrors how
+# meta-riscv's own kas configuration is structured.
+
+header:
+  version: 14   # minimum schema version with branch:/commit: keys.
+                # meta-riscv's own kas files use version 20 -- do not include
+                # them directly unless your kas installation is new enough.
+
+machine: orangepi-rv2-mainline   # provided by meta-riscv (the BSP layer);
+                                 # do not invent other RV2 machine names.
+distro: rv2-sgl                  # provided by layers/meta-company
+target: rv2-sgl-image
+
+repos:
+  # This repository itself. No `url:` means "the repo containing this file".
+  # It must be a git repository for kas to resolve it (git init + commit).
+  rv2-space-linux:
+    layers:
+      layers/meta-company:
+
+  # Build tool only -- checked out so bitbake matches the series, but never
+  # added to BBLAYERS (the `disabled` marker suppresses layer registration).
+  bitbake:
+    url: "https://git.openembedded.org/bitbake"
+    branch: "2.18"   # keep quoted: a bare 2.18 would parse as a YAML float.
+    path: layers/bitbake
+    layers:
+      bitbake: disabled
+
+  core:
+    url: "https://git.openembedded.org/openembedded-core"
+    branch: &yocto_series "wrynose"
+    path: layers/openembedded-core
+    layers:
+      meta:
+
+  meta-yocto:
+    url: "https://git.yoctoproject.org/meta-yocto"
+    branch: *yocto_series
+    path: layers/meta-poky
+    layers:
+      meta-poky:   # provides conf/distro/poky.conf (required by rv2-sgl.conf)
+
+  meta-openembedded:
+    url: "https://git.openembedded.org/meta-openembedded"
+    branch: *yocto_series
+    path: layers/meta-openembedded
+    layers:
+      meta-oe:           # nano, common utilities
+      meta-python:
+      meta-networking:   # chrony
+
+  # BSP layer: machine conf, mainline kernel (linux-mainline-k1), U-Boot,
+  # OpenSBI, boot-bundle/bootinfo artifacts for the SpacemiT K1/Ky X1 boards.
+  #
+  # RISK / ADJUST HERE: new RV2 fixes land on meta-riscv `master` first, but
+  # master tracks the in-development Yocto series. If you need a fix that has
+  # not been backported, pin a known-good commit with `commit:` rather than
+  # switching to master.
+  meta-riscv:
+    url: "https://github.com/riscv/meta-riscv"
+    branch: *yocto_series
+    path: layers/meta-riscv
+    # No `layers:` key -- the repository root is the layer.
+
+  # Space Grade Linux policy layer (ELISA project). This is NOT a BSP: board
+  # support comes from meta-riscv above; meta-sgl provides (and will provide
+  # more) space-grade policy, packages and features.
+  #
+  # RISK / ADJUST HERE: meta-sgl is early-stage and `main` is a moving
+  # target. Pin a known-good revision by uncommenting `commit:` below.
+  meta-sgl:
+    url: "https://github.com/elisa-tech/meta-sgl"
+    branch: main
+    # commit: <known-good-sha>   # uncomment to pin (recommended for release)
+    path: layers/meta-sgl
+    layers:
+      meta-sgl-core:   # the repo root is not a layer; the sublayer is.
+
+bblayers_conf_header:
+  rv2-standard: |
+    POKY_BBLAYERS_CONF_VERSION = "2"
+    BBPATH = "${TOPDIR}"
+    BBFILES ?= ""
+
+  # TEMPORARY SHIM -- REMOVE once upstream meta-sgl declares wrynose support.
+  # meta-sgl-core's layer.conf currently declares
+  #   LAYERSERIES_COMPAT = "kirkstone scarthgap walnascar whinlatter"
+  # (no wrynose), so bitbake would refuse to parse it on Yocto 6.0.
+  # The append below extends the compatibility claim from our side.
+  #
+  # NOTE: this MUST live in bblayers.conf, not local.conf -- bitbake checks
+  # layer compatibility while parsing the layer.conf files, which happens
+  # BEFORE local.conf is read (verified: a local.conf append does not work).
+  # bblayers.conf is parsed first, so an :append registered here is already
+  # in effect when the check runs.
+  #
+  # Alternative (heavier) approach: apply a one-line layer.conf patch to the
+  # meta-sgl checkout via kas `repos.meta-sgl.patches:`.
+  rv2-sgl-compat-shim: |
+    LAYERSERIES_COMPAT_meta-sgl-core:append = " wrynose"
+    # meta-sgl-core ships no recipes yet (conf-only layer); silence the
+    # harmless "No bb files matched" parse warning until it grows some.
+    BBFILE_PATTERN_IGNORE_EMPTY_meta-sgl-core = "1"
+
+local_conf_header:
+  # kas generates local.conf from scratch: nothing from local.conf.sample
+  # applies, so the defaults we care about are restated here.
+  rv2-base: |
+    PACKAGE_CLASSES = "package_rpm"
+    SDKMACHINE ?= "x86_64"
+    USER_CLASSES ?= "buildstats"
+    PATCHRESOLVE = "noop"
+    BB_DISKMON_DIRS ??= "\
+        STOPTASKS,${TMPDIR},1G,100K \
+        STOPTASKS,${DL_DIR},1G,100K \
+        STOPTASKS,${SSTATE_DIR},1G,100K \
+        STOPTASKS,/tmp,100M,100K \
+        HALT,${TMPDIR},100M,1K \
+        HALT,${DL_DIR},100M,1K \
+        HALT,${SSTATE_DIR},100M,1K \
+        HALT,/tmp,10M,1K"
+    CONF_VERSION = "2"
+
+  # NOTE: the meta-sgl wrynose compatibility shim lives in
+  # bblayers_conf_header above (it must be active before layer.conf parsing;
+  # local.conf is parsed too late for it to take effect).
+
+  # SGL: system-level observability/telemetry knobs can be adopted from
+  # meta-sgl's own kas fragments once your kas version allows it, e.g.:
+  #   header:
+  #     includes:
+  #       - repo: meta-sgl
+  #         file: kas/limit-pressure.yml
+  #         # kas/diskmon.yml uses header version 16 -- needs a newer kas.
+  # (Do NOT adopt meta-sgl's kas/common.yml for release builds: it enables
+  # development-only insecure IMAGE_FEATURES. Its kas/systemd.yml uses the
+  # legacy init-manager pattern; our distro conf uses INIT_MANAGER instead.)

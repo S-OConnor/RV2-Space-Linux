@@ -1,0 +1,31 @@
+# kas/rv2-dev.yml -- DEVELOPMENT build of rv2-sgl-image.
+#
+# Usage:   kas build kas/rv2-dev.yml     (or: ./scripts/build-dev.sh)
+#
+# Adds debugging conveniences on top of the shared base. NEVER ship an image
+# built from this configuration.
+
+header:
+  version: 14
+  includes:
+    - kas/include/rv2-base.yml   # path is relative to the repository root
+
+local_conf_header:
+  # Same key ("rv2-variant") as in rv2-release.yml, so the two variants are
+  # mutually exclusive by construction if configs are ever chained.
+  rv2-variant: |
+    # DEV ONLY -- root login without password, debugging tools.
+    # NOTE: Yocto 6.0 (wrynose) removed the old "debug-tweaks" meta-feature;
+    # the individual features it used to expand to must be listed explicitly
+    # (verified: debug-tweaks now fails the image-feature validity check).
+    EXTRA_IMAGE_FEATURES = "\
+        allow-empty-password \
+        allow-root-login \
+        empty-root-password \
+        post-install-logging \
+        tools-debug \
+    "
+
+    # Optional dev conveniences:
+    # EXTRA_IMAGE_FEATURES:append = " serial-autologin-root"
+    # INHERIT += "rm_work"   # disk-space saver for iterative development
