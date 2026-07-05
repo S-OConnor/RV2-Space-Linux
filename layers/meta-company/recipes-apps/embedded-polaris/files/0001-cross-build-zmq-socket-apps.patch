@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Stephen O'Connor <stephen.r.oconnor92@gmail.com>
+Date: Sun, 5 Jul 2026 00:00:00 +0000
+Subject: [PATCH] Cross-compile the ZeroMQ socket apps for the RV2 image
+
+Upstream keeps the frame_* socket apps host-only (the block is guarded by
+`NOT CMAKE_CROSSCOMPILING`) on the assumption that a generic cross sysroot
+need not carry libzmq. In the rv2-space-linux Yocto build the target sysroot
+DOES provide libzmq (zeromq) and cppzmq via the recipe DEPENDS, so the apps
+can and should cross-compile to be installed in the image.
+
+Only the app/test targets in this block change behaviour; the guard's
+underlying find_package(cppzmq)/find_library(zmq) logic is unchanged and now
+resolves against the cross sysroot. The socket tests here are registered with
+add_test (not gtest_discover_tests) under a cross toolchain, so nothing is
+executed at build time.
+
+Upstream-Status: Inappropriate [embedded/yocto-specific configuration]
+Signed-off-by: Stephen O'Connor <stephen.r.oconnor92@gmail.com>
+---
+ CMakeLists.txt | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7537b0a..bdb39b5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -665,7 +665,11 @@ add_test(NAME track_from_files COMMAND track_from_files)
+ # ============================================================================
+ # Socket apps link libzmq (a real runtime lib, not header-only), which a cross sysroot need
+ # not carry — so keep them host-only even when the cross Boost headers are present.
+-if(POLARIS_BUILD_ZMQ_APP AND NOT CMAKE_CROSSCOMPILING)
++# rv2-space-linux (Yocto cross build): the target sysroot DOES carry libzmq (zeromq)
++# and cppzmq via the recipe DEPENDS, so the "a cross sysroot need not carry libzmq"
++# rationale for the host-only guard above does not hold here. Drop the
++# NOT CMAKE_CROSSCOMPILING term so the frame_* socket apps cross-compile for the image.
++if(POLARIS_BUILD_ZMQ_APP)
+   # cppzmq is header-only over libzmq. Prefer its CMake package; fall back to the
+   # bare header + libzmq so it builds wherever cppzmq-devel/zeromq-devel are present.
+   find_package(cppzmq QUIET)

@@ -24,6 +24,7 @@ RDEPENDS:${PN} = " \
     zeromq \
     cppzmq \
     hello-rv2 \
+    embedded-polaris \
 "
 
 # Package notes:
@@ -45,6 +46,13 @@ RDEPENDS:${PN} = " \
 #                          the toolchain sysroot. So zeromq-dev (zmq.h, libzmq.so
 #                          symlink, libzmq.pc) and cppzmq-dev (zmq.hpp) reach the
 #                          SDK only because zeromq/cppzmq are installed here.
+#                          They are also the runtime deps of embedded-polaris below.
+#   embedded-polaris     - from meta-company; the Polaris tracker apps
+#                          (track_from_files + the frame_* ZeroMQ socket services),
+#                          fetched and built from git (github S-OConnor/embedded-polaris,
+#                          branch cplusplus_migration). It links libzmq at runtime, which
+#                          is why zeromq is required in the image. See its recipe in
+#                          recipes-apps/embedded-polaris.
 
 # SGL placeholder: future SGL packagegroups (e.g. packagegroup-sgl-core:
 # hardening, safety supervision, update client, observability agents) should be
