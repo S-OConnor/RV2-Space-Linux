@@ -25,6 +25,7 @@ RDEPENDS:${PN} = " \
     cppzmq \
     hello-rv2 \
     embedded-polaris \
+    rs422-tools \
 "
 
 # Package notes:
@@ -53,6 +54,11 @@ RDEPENDS:${PN} = " \
 #                          branch cplusplus_migration). It links libzmq at runtime, which
 #                          is why zeromq is required in the image. See its recipe in
 #                          recipes-apps/embedded-polaris.
+#   rs422-tools          - from meta-company; the RS-422 serial_link apps rs422-monitor
+#                          (attitude-stream live display) and rs422-c2 (register command
+#                          & control), fetched and built from git (github
+#                          S-OConnor/RS-422-Tools, branch master). Plain CMake, no extra
+#                          runtime deps beyond glibc. See recipes-apps/rs422-tools.
 
 # SGL placeholder: future SGL packagegroups (e.g. packagegroup-sgl-core:
 # hardening, safety supervision, update client, observability agents) should be

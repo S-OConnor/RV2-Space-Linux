@@ -7,9 +7,10 @@ cd "$REPO_ROOT"   # kas resolves the work dir from CWD: sources land in layers/,
 
 # All build tooling runs inside the official kas container image
 # (ghcr.io/siemens/kas/kas) via the vendored scripts/kas-container wrapper --
-# nothing besides Docker or Podman needs to be installed on the host.
-# kas-container prefers docker; export KAS_CONTAINER_ENGINE=podman to force podman.
-# Set KAS_NATIVE=1 to use a host-installed `kas` instead.
+# nothing besides Podman or Docker needs to be installed on the host.
+# This project defaults to podman; export KAS_CONTAINER_ENGINE=docker to use
+# docker instead. Set KAS_NATIVE=1 to use a host-installed `kas`.
+export KAS_CONTAINER_ENGINE="${KAS_CONTAINER_ENGINE:-podman}"
 if [[ "${KAS_NATIVE:-0}" == "1" ]]; then
     if ! command -v kas >/dev/null 2>&1; then
         echo "error: KAS_NATIVE=1 but 'kas' was not found on the host." >&2
@@ -17,9 +18,9 @@ if [[ "${KAS_NATIVE:-0}" == "1" ]]; then
     fi
     KAS_CMD=(kas)
 else
-    if ! command -v docker >/dev/null 2>&1 && ! command -v podman >/dev/null 2>&1; then
-        echo "error: neither docker nor podman found (required by scripts/kas-container)." >&2
-        echo "       Install a container engine, or set KAS_NATIVE=1 to use a host-installed kas." >&2
+    if ! command -v "${KAS_CONTAINER_ENGINE}" >/dev/null 2>&1; then
+        echo "error: container engine '${KAS_CONTAINER_ENGINE}' not found (required by scripts/kas-container)." >&2
+        echo "       Install it, set KAS_CONTAINER_ENGINE to an available engine, or set KAS_NATIVE=1 to use a host-installed kas." >&2
         exit 1
     fi
     KAS_CMD=("${REPO_ROOT}/scripts/kas-container")

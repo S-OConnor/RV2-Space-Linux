@@ -72,8 +72,8 @@ fragment) are covered.
 
 You need:
 
-- **Docker or Podman.** `kas-container` prefers Docker; set
-  `KAS_CONTAINER_ENGINE=podman` to force Podman.
+- **Podman or Docker.** The build scripts default to Podman; set
+  `KAS_CONTAINER_ENGINE=docker` to use Docker instead.
 - Roughly 100 GB of free disk and a many-core machine — first builds compile
   a full toolchain and root filesystem from source.
 - `bmaptool` on the host (recommended) for fast, checksum-verified flashing —
